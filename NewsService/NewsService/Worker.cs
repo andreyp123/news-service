@@ -50,7 +50,7 @@ namespace NewsService
 
         private async Task HandleLatestNews(CancellationToken ct)
         {
-            NewsItem lastItem = null;
+            NewsItem lastSuccessfulItem = null;
             try
             {
                 _logger.LogInformation("Handling latest news...");
@@ -67,8 +67,8 @@ namespace NewsService
 
                 for (int i = newsItems.Count - 1; i >= 0; i--)
                 {
-                    lastItem = newsItems[i];
-                    await _botNotifier.SendAsync(lastItem, ct);
+                    await _botNotifier.SendAsync(newsItems[i], ct);
+                    lastSuccessfulItem = newsItems[i];
                 }
             }
             catch (Exception ex)
@@ -77,18 +77,18 @@ namespace NewsService
             }
             finally
             {
-                if (lastItem != null)
+                if (lastSuccessfulItem != null)
                 {
-                    var newState = NewsState.FromNewsItem(lastItem);
-                    SetStateSafe(newState);
+                    UpdateStateSafe(lastSuccessfulItem);
                 }
             }
         }
 
-        private void SetStateSafe(NewsState state)
+        private void UpdateStateSafe(NewsItem newsItem)
         {
             try
             {
+                var state = NewsState.FromNewsItem(newsItem);
                 _stateRepository.SetState(state);
                 _logger.LogInformation($"New state: {state}");
             }
