@@ -1,0 +1,1 @@
+docker build -t news-service:0.2 -f .\NewsService\Dockerfile .

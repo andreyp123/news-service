@@ -1,0 +1,19 @@
+version: '3.4'
+
+services:
+  news.service:
+    container_name: news-service
+    image: news-service:0.2
+    environment:
+      - StateRepository__StateFilePath=/var/news-service/state
+      - NewsFeedReader__NewsUrl=
+      - NewsFeedReader__NewNewsLimit=10
+      - NewsFeedReader__ReadPagesLimit=5
+      - BotNotifier__BotToken=
+      - BotNotifier__ChatId=
+      - Worker__CheckInterval=00:00:30
+      - Logging__LogLevel__Default=Information
+      - Logging__LogLevel__System=Error
+      - Logging__LogLevel__Microsoft=Error
+    volumes:
+      - /opt/news-service/:/var/news-service/
