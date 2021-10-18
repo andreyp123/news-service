@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using NewsManager;
 using NotificationManager;
 using PersistentStorage;
+using Serilog;
 
 namespace NewsService
 {
@@ -18,14 +19,19 @@ namespace NewsService
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddHostedService<Worker>();
-                    services.AddSingleton<WorkerConfig>();
+                    services.AddHostedService<NewsServiceWorker>();
+                    services.AddSingleton<NewsServiceWorkerConfig>();
+                    services.AddSingleton<INewsService, NewsService>();
                     services.AddSingleton<NewsFeedReaderConfig>();
                     services.AddSingleton<INewsFeedReader, NewsFeedReader>();
                     services.AddSingleton<StateRepositoryConfig>();
                     services.AddSingleton<IStateRepository<NewsState>, StateRepository<NewsState>>();
                     services.AddSingleton<BotNotifierConfig>();
                     services.AddSingleton<IBotNotifier, BotNotifier>();
+                })
+                .UseSerilog((context, services, loggerConfiguration) =>
+                {
+                    loggerConfiguration.ReadFrom.Configuration(context.Configuration);
                 });
     }
 }

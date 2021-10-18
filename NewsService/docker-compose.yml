@@ -3,17 +3,17 @@ version: '3.4'
 services:
   news.service:
     container_name: news-service
-    image: news-service:0.2
+    image: news-service:0.3
     environment:
       - StateRepository__StateFilePath=/var/news-service/state
       - NewsFeedReader__NewsUrl=
-      - NewsFeedReader__NewNewsLimit=10
-      - NewsFeedReader__ReadPagesLimit=5
+      - NewsFeedReader__NewNewsLimit=100
+      - NewsFeedReader__ReadPagesLimit=100
       - BotNotifier__BotToken=
       - BotNotifier__ChatId=
-      - Worker__CheckInterval=00:00:30
-      - Logging__LogLevel__Default=Information
-      - Logging__LogLevel__System=Error
-      - Logging__LogLevel__Microsoft=Error
+      - NewsServiceWorker__CheckInterval=00:30:00
+      - Serilog__MinimumLevel__Default=Information
+      - Serilog__WriteTo__1__Args__path=/var/news-service/log/NewsService.log
+    restart: always
     volumes:
       - /opt/news-service/:/var/news-service/

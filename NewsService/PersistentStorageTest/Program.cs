@@ -4,12 +4,14 @@ using PersistentStorage;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PersistentStorageTest
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             var config = new StateRepositoryConfig
             {
@@ -17,17 +19,19 @@ namespace PersistentStorageTest
             };
             var repository = new StateRepository<NewsState>(NullLogger<StateRepository<NewsState>>.Instance, config);
 
+            var ct = CancellationToken.None;
+
             var states = new List<NewsState>();
-            states.Add(repository.GetState());
-            states.Add(repository.GetState());
-            repository.SetState(null);
-            states.Add(repository.GetState());
-            repository.SetState(NewsState.Empty);
-            states.Add(repository.GetState());
-            repository.SetState(NewsState.FromNewsItem((NewsItem)null));
-            states.Add(repository.GetState());
-            repository.SetState(NewsState.FromNewsItem(new NewsItem { Title = "title", Url = "url", Date = DateTime.Now }));
-            states.Add(repository.GetState());
+            states.Add(await repository.GetStateAsync(ct));
+            states.Add(await repository.GetStateAsync(ct));
+            await repository.SetStateAsync(null, ct);
+            states.Add(await repository.GetStateAsync(ct));
+            await repository.SetStateAsync(NewsState.Empty, ct);
+            states.Add(await repository.GetStateAsync(ct));
+            await repository.SetStateAsync(NewsState.FromNewsItem(null), ct);
+            states.Add(await repository.GetStateAsync(ct));
+            await repository.SetStateAsync(NewsState.FromNewsItem(new NewsItem { Title = "title", Url = "url", Date = DateTime.Now }), ct);
+            states.Add(await repository.GetStateAsync(ct));
 
             foreach (var state in states)
             {

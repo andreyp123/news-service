@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.IO;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PersistentStorage
 {
@@ -10,56 +12,68 @@ namespace PersistentStorage
         private readonly ILogger<StateRepository<StateT>> _logger;
         private readonly StateRepositoryConfig _config;
         private StateT _cachedState = null;
-        private object _lockObj = new object();
+        private SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
-        public StateRepository(ILogger<StateRepository<StateT>> logger, StateRepositoryConfig config)
+        public StateRepository(
+            ILogger<StateRepository<StateT>> logger,
+            StateRepositoryConfig config)
         {
             _logger = logger;
             _config = config;
             _logger.LogInformation($"Configuration: {JsonSerializer.Serialize(_config)}");
         }
 
-        public StateT GetState()
+        public async Task<StateT> GetStateAsync(CancellationToken ct)
         {
             if (_cachedState == null)
             {
-                lock (_lockObj)
+                await semaphore.WaitAsync();
+                try
                 {
-                    _cachedState = ReadState();
+                    _cachedState = await ReadStateAsync(ct);
+                }
+                finally
+                {
+                    semaphore.Release();
                 }
             }
             return _cachedState;
         }
 
-        public void SetState(StateT state)
+        public async Task SetStateAsync(StateT state, CancellationToken ct)
         {
-            lock (_lockObj)
+            await semaphore.WaitAsync();
+            try
             {
-                WriteState(state);
+                await WriteStateAsync(state, ct);
                 _cachedState = state;
             }
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
-        private StateT ReadState()
+        private async Task<StateT> ReadStateAsync(CancellationToken ct)
         {
-            if (!File.Exists(_config.StateFilePath))
+            StateT state = null;
+
+            using var stream = File.Open(_config.StateFilePath, FileMode.OpenOrCreate);
+            if (stream.Length > 0)
             {
-                return null;
+                state = await JsonSerializer.DeserializeAsync<StateT>(stream, cancellationToken: ct);
             }
-            string stateStr = File.ReadAllText(_config.StateFilePath);
-            if (string.IsNullOrEmpty(stateStr))
-            {
-                return null;
-            }
-            return JsonSerializer.Deserialize<StateT>(stateStr);
+
+            return state;
         }
 
-        private void WriteState(StateT state)
+        private async Task WriteStateAsync(StateT state, CancellationToken ct)
         {
-            string stateStr = state != null
-                ? JsonSerializer.Serialize(state)
-                : "";
-            File.WriteAllText(_config.StateFilePath, stateStr);
+            using var stream = File.Create(_config.StateFilePath);
+            if (state != null)
+            {
+                await JsonSerializer.SerializeAsync(stream, state, cancellationToken: ct);
+            }
         }
     }
 }

@@ -1,60 +1,40 @@
-using Common;
-using Microsoft.Extensions.Hosting;
+﻿using Common;
 using Microsoft.Extensions.Logging;
 using NewsManager;
 using NotificationManager;
 using PersistentStorage;
 using System;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace NewsService
 {
-    public class Worker : BackgroundService
+    public class NewsService : INewsService
     {
-        private readonly ILogger<Worker> _logger;
-        private readonly WorkerConfig _config;
+        private readonly ILogger<NewsService> _logger;
         private readonly INewsFeedReader _newsFeedReader;
         private readonly IStateRepository<NewsState> _stateRepository;
         private readonly IBotNotifier _botNotifier;
 
-        public Worker(
-            ILogger<Worker> logger,
-            WorkerConfig config,
+        public NewsService(
+            ILogger<NewsService> logger,
             INewsFeedReader newsFeedReader,
             IStateRepository<NewsState> stateRepository,
             IBotNotifier botNotifier)
         {
             _logger = logger;
-            _config = config;
-            _logger.LogInformation($"Configuration: {JsonSerializer.Serialize(_config)}");
-
             _newsFeedReader = newsFeedReader;
             _stateRepository = stateRepository;
             _botNotifier = botNotifier;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken ct)
-        {
-            _logger.LogInformation("Started worker.");
-
-            while (!ct.IsCancellationRequested)
-            {
-                await HandleLatestNews(ct);
-
-                _logger.LogInformation($"Sleeping {_config.CheckInterval.ToString("c")}...");
-                await Task.Delay((int)_config.CheckInterval.TotalMilliseconds, ct);
-            }
-        }
-
-        private async Task HandleLatestNews(CancellationToken ct)
+        public async Task HandleLatestNewsAsync(CancellationToken ct)
         {
             NewsItem lastSuccessfulItem = null;
             try
             {
                 _logger.LogInformation("Handling latest news...");
-                var state = _stateRepository.GetState();
+                var state = await _stateRepository.GetStateAsync(ct);
                 _logger.LogInformation($"State: {state}");
 
                 var newsItems = await _newsFeedReader.GetNewsAsync(state?.LastNewsItem?.Date, ct);
@@ -79,17 +59,17 @@ namespace NewsService
             {
                 if (lastSuccessfulItem != null)
                 {
-                    UpdateStateSafe(lastSuccessfulItem);
+                    await SafeUpdateStateAsync(lastSuccessfulItem, ct);
                 }
             }
         }
 
-        private void UpdateStateSafe(NewsItem newsItem)
+        private async Task SafeUpdateStateAsync(NewsItem newsItem, CancellationToken ct)
         {
             try
             {
                 var state = NewsState.FromNewsItem(newsItem);
-                _stateRepository.SetState(state);
+                await _stateRepository.SetStateAsync(state, ct);
                 _logger.LogInformation($"New state: {state}");
             }
             catch (Exception ex)
