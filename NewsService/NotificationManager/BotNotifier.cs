@@ -1,6 +1,7 @@
 ﻿using Common;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -47,7 +48,7 @@ namespace NotificationManager
         {
             return new StringBuilder()
                 .AppendLine($"*{newsItem.Title}*")
-                .AppendLine(newsItem.Date.ToString("f"))
+                .AppendLine(newsItem.Date.ToString("g", CultureInfo.GetCultureInfo("ru-RU")))
                 .AppendLine(newsItem.Url)
                 .ToString();
         }
