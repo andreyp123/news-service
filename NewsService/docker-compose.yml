@@ -3,12 +3,12 @@ version: '3.4'
 services:
   news.service:
     container_name: news-service
-    image: news-service:0.3
+    image: news-service:0.4
     environment:
-      - StateRepository__StateFilePath=/var/news-service/state
+      - NewsRepository__ConnectionString=Data Source=/var/news-service/news.db
       - NewsFeedReader__NewsUrl=
-      - NewsFeedReader__NewNewsLimit=100
-      - NewsFeedReader__ReadPagesLimit=100
+      - NewsFeedReader__NewNewsLimit=48
+      - NewsFeedReader__ReadPagesLimit=5
       - BotNotifier__BotToken=
       - BotNotifier__ChatId=
       - NewsServiceWorker__CheckInterval=00:30:00
