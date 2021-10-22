@@ -5,6 +5,7 @@ namespace NewsService
 {
     public interface INewsService
     {
+        Task PrepareRepositoryAsync(CancellationToken ct);
         Task HandleLatestNewsAsync(CancellationToken ct);
     }
 }

@@ -24,10 +24,16 @@ namespace NewsService
             _newsService = newsService;
         }
 
+        public override async Task StartAsync(CancellationToken ct)
+        {
+            _logger.LogInformation($"Staring worker...");
+
+            await _newsService.PrepareRepositoryAsync(ct);
+            await base.StartAsync(ct);
+        }
+
         protected override async Task ExecuteAsync(CancellationToken ct)
         {
-            _logger.LogInformation("Started worker.");
-
             while (!ct.IsCancellationRequested)
             {
                 await _newsService.HandleLatestNewsAsync(ct);

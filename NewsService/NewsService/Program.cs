@@ -1,4 +1,3 @@
-using Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NewsManager;
@@ -24,10 +23,11 @@ namespace NewsService
                     services.AddSingleton<INewsService, NewsService>();
                     services.AddSingleton<NewsFeedReaderConfig>();
                     services.AddSingleton<INewsFeedReader, NewsFeedReader>();
-                    services.AddSingleton<StateRepositoryConfig>();
-                    services.AddSingleton<IStateRepository<NewsState>, StateRepository<NewsState>>();
+                    services.AddSingleton<NewsRepositoryConfig>();
+                    services.AddSingleton<INewsRepository, NewsRepository>();
                     services.AddSingleton<BotNotifierConfig>();
                     services.AddSingleton<IBotNotifier, BotNotifier>();
+                    //services.AddSingleton<IBotNotifier, BotNotifierMock>();
                 })
                 .UseSerilog((context, services, loggerConfiguration) =>
                 {
