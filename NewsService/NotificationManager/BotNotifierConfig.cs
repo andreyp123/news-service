@@ -9,6 +9,7 @@ namespace NotificationManager
 
         public string BotToken { get; set; }
         public long ChatId { get; set; }
+        public int LimitPerSec { get; set; }
 
         public BotNotifierConfig()
         {

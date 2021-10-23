@@ -57,8 +57,8 @@ namespace NewsService
 
                 foreach (var newsItem in ((IEnumerable<NewsItem>)newsItems).Reverse())
                 {
-                    await _newsRepository.CreateNewsItemAsync(newsItem, ct);
                     await _botNotifier.SendAsync(newsItem, ct);
+                    await _newsRepository.CreateNewsItemAsync(newsItem, ct);
                 }
             }
             catch (Exception ex)
